@@ -1,6 +1,6 @@
 # Portal + Livro + Árvore (MVP)
 
-MVP vendável para genealogia privada multi-tenant com:
+MVP para genealogia privada multi-tenant com:
 - Site público (marketing)
 - Portal por família/projeto com autenticação
 - CRUD de pessoas, relações, fontes e mídias
