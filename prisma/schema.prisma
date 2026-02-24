@@ -1,0 +1,113 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = env("DATABASE_PROVIDER")
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  ADMIN
+  EDITOR
+  VIEWER
+}
+
+enum RelationshipType {
+  PARENT
+  SPOUSE
+}
+
+enum MediaType {
+  IMAGE
+  PDF
+}
+
+model FamilyProject {
+  id               String       @id @default(cuid())
+  slug             String       @unique
+  name             String
+  hideLivingForNonAdmin Boolean  @default(true)
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+  memberships      Membership[]
+  persons          Person[]
+}
+
+model User {
+  id           String       @id @default(cuid())
+  name         String
+  email        String       @unique
+  passwordHash String
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+  memberships  Membership[]
+}
+
+model Membership {
+  id             String       @id @default(cuid())
+  role           Role
+  userId         String
+  familyProjectId String
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  familyProject  FamilyProject @relation(fields: [familyProjectId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, familyProjectId])
+}
+
+model Person {
+  id             String       @id @default(cuid())
+  externalId     String?
+  familyProjectId String
+  name           String
+  gender         String?
+  birthDate      DateTime?
+  deathDate      DateTime?
+  isAlive        Boolean      @default(true)
+  birthPlace     String?
+  deathPlace     String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  familyProject  FamilyProject @relation(fields: [familyProjectId], references: [id], onDelete: Cascade)
+  fromRelations  Relationship[] @relation("FromPerson")
+  toRelations    Relationship[] @relation("ToPerson")
+  sources        Source[]
+  media          Media[]
+
+  @@index([familyProjectId, name])
+}
+
+model Relationship {
+  id            String          @id @default(cuid())
+  familyProjectId String
+  type          RelationshipType
+  fromPersonId  String
+  toPersonId    String
+  metadata      String?
+  createdAt     DateTime        @default(now())
+  familyProject FamilyProject   @relation(fields: [familyProjectId], references: [id], onDelete: Cascade)
+  fromPerson    Person          @relation("FromPerson", fields: [fromPersonId], references: [id], onDelete: Cascade)
+  toPerson      Person          @relation("ToPerson", fields: [toPersonId], references: [id], onDelete: Cascade)
+
+  @@index([familyProjectId, type])
+}
+
+model Source {
+  id         String   @id @default(cuid())
+  personId   String
+  citationText String
+  url        String?
+  createdAt  DateTime @default(now())
+  person     Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+}
+
+model Media {
+  id         String   @id @default(cuid())
+  personId   String
+  type       MediaType
+  filename   String
+  title      String?
+  createdAt  DateTime @default(now())
+  person     Person   @relation(fields: [personId], references: [id], onDelete: Cascade)
+}
